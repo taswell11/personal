@@ -12,6 +12,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Auth tokens never contain custom claims.
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
@@ -30,7 +31,7 @@ service cloud.firestore {
 
     function emailMatches(dbEmail) {
       return isSignedIn() && 
-             request.auth.token.keys().contains('email') && 
+             'email' in request.auth.token && 
              dbEmail is string && 
              dbEmail.lower() == request.auth.token.email.lower();
     }
@@ -44,7 +45,7 @@ service cloud.firestore {
              data.role in ['borrower', 'creditor'] &&
              data.uid == request.auth.uid &&
              (data.role != 'creditor' || 
-              (request.auth.token.keys().contains('email') && 
+              ('email' in request.auth.token && 
                (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || 
                 request.auth.token.email.lower() == 'taswellsolomons@gmail.com')));
     }
@@ -64,7 +65,7 @@ service cloud.firestore {
              data.type in ['loan', 'payment', 'interest', 'allocation'] &&
              data.amount is number &&
              data.createdBy == request.auth.uid &&
-             (!data.keys().contains('createdAt') || data.createdAt == request.time);
+             (!('createdAt' in data) || data.createdAt == request.time);
     }
 
     function isValidLoanRequest(data) {
@@ -73,13 +74,13 @@ service cloud.firestore {
              data.creditorId is string && data.creditorId.size() <= 128 &&
              data.amount is number &&
              data.status in ['pending', 'approved', 'rejected'] &&
-             (!data.keys().contains('interestRate') || (data.interestRate >= 0 && data.interestRate <= 50)) &&
-             (!data.keys().contains('createdAt') || data.createdAt == request.time);
+             (!('interestRate' in data) || (data.interestRate >= 0 && data.interestRate <= 50)) &&
+             (!('createdAt' in data) || data.createdAt == request.time);
     }
 
     function isValidLoanRequestUpdate(data) {
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      let hasValidInterest = !data.keys().contains('interestRate') || (data.interestRate >= 0 && data.interestRate <= 50);
+      let hasValidInterest = !('interestRate' in data) || (data.interestRate >= 0 && data.interestRate <= 50);
       // Allow status update + updatedAt, interestRate, dateRequired; or allow full update if compliant with isValidLoanRequest
       return (changed.hasAll(['status']) && changed.hasOnly(['status', 'updatedAt', 'interestRate', 'dateRequired']) && (data.status in ['approved', 'rejected']) && hasValidInterest) || isValidLoanRequest(data);
     }
@@ -97,19 +98,19 @@ service cloud.firestore {
     match /ledgers/{ledgerId} {
       allow get: if isValidId(ledgerId) && isSignedIn() && (
         isOwner(existing().creditorId) || 
-        (existing().keys().contains('borrowerId') && isOwner(existing().borrowerId)) || 
-        (existing().keys().contains('borrowerEmail') && emailMatches(existing().borrowerEmail))
+        ('borrowerId' in existing() && isOwner(existing().borrowerId)) || 
+        ('borrowerEmail' in existing() && emailMatches(existing().borrowerEmail))
       );
       allow list: if isSignedIn() && (
         resource.data.creditorId == request.auth.uid || 
-        (resource.data.keys().contains('borrowerId') && resource.data.borrowerId == request.auth.uid) || 
-        (resource.data.keys().contains('borrowerEmail') && (resource.data.borrowerEmail == request.auth.token.email || resource.data.borrowerEmail.lower() == request.auth.token.email.lower()))
+        ('borrowerId' in resource.data && resource.data.borrowerId == request.auth.uid) || 
+        ('borrowerEmail' in resource.data && (resource.data.borrowerEmail == request.auth.token.email || resource.data.borrowerEmail.lower() == request.auth.token.email.lower()))
       );
       allow create: if isValidId(ledgerId) && isSignedIn() && isOwner(incoming().creditorId) && isValidLedger(incoming());
       allow update: if isValidId(ledgerId) && isSignedIn() && (
         isOwner(existing().creditorId) || 
-        (existing().keys().contains('borrowerId') && isOwner(existing().borrowerId) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId', 'borrowerEmail', 'borrowerName'])) || 
-        (existing().keys().contains('borrowerEmail') && emailMatches(existing().borrowerEmail) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId']))
+        ('borrowerId' in existing() && isOwner(existing().borrowerId) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId', 'borrowerEmail', 'borrowerName'])) || 
+        ('borrowerEmail' in existing() && emailMatches(existing().borrowerEmail) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId']))
       );
       allow delete: if isValidId(ledgerId) && isSignedIn() && isOwner(existing().creditorId);
 
@@ -118,16 +119,16 @@ service cloud.firestore {
         function canReadLedger() {
           let ledger = get(/databases/$(database)/documents/ledgers/$(ledgerId)).data;
           return isOwner(ledger.creditorId) || 
-                 (ledger.keys().contains('borrowerId') && isOwner(ledger.borrowerId)) || 
-                 (ledger.keys().contains('borrowerEmail') && emailMatches(ledger.borrowerEmail));
+                 ('borrowerId' in ledger && isOwner(ledger.borrowerId)) || 
+                 ('borrowerEmail' in ledger && emailMatches(ledger.borrowerEmail));
         }
         function isCreditorOfLedger() {
           return isOwner(get(/databases/$(database)/documents/ledgers/$(ledgerId)).data.creditorId);
         }
         function isBorrowerOfLedger() {
           let ledger = get(/databases/$(database)/documents/ledgers/$(ledgerId)).data;
-          return (ledger.keys().contains('borrowerId') && isOwner(ledger.borrowerId)) || 
-                 (ledger.keys().contains('borrowerEmail') && emailMatches(ledger.borrowerEmail));
+          return ('borrowerId' in ledger && isOwner(ledger.borrowerId)) || 
+                 ('borrowerEmail' in ledger && emailMatches(ledger.borrowerEmail));
         }
 
         allow get: if isValidId(transactionId) && isSignedIn() && canReadLedger();
@@ -153,17 +154,17 @@ service cloud.firestore {
       allow delete: if isValidId(notificationId) && isSignedIn() && isOwner(existing().userId);
     }
 
+    match /email_logs/{logId} {
+      allow read: if isSignedIn() && resource.data.senderUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.senderUid == request.auth.uid;
+    }
+
     match /invitations/{invitationId} {
       allow get: if isValidId(invitationId) && isSignedIn();
       allow create: if isValidId(invitationId) && isSignedIn() && isOwner(incoming().creditorId) && 
                     (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || request.auth.token.email.lower() == 'taswellsolomons@gmail.com');
       allow update: if isValidId(invitationId) && isSignedIn();
       allow delete: if isValidId(invitationId) && isSignedIn() && isOwner(existing().creditorId);
-    }
-
-    match /email_logs/{logId} {
-      allow read: if isSignedIn() && resource.data.senderUid == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.senderUid == request.auth.uid;
     }
   }
 }
