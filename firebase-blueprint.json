@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Information about the user and their role",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["borrower", "creditor"] },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Ledger": {
+      "title": "Ledger",
+      "description": "A record of debt between a creditor and a borrower",
+      "type": "object",
+      "properties": {
+        "borrowerId": { "type": "string" },
+        "borrowerEmail": { "type": "string" },
+        "creditorId": { "type": "string" },
+        "borrowerName": { "type": "string" },
+        "creditorName": { "type": "string" },
+        "currentBalance": { "type": "number" },
+        "principalBalance": { "type": "number" },
+        "interestBalance": { "type": "number" },
+        "unallocatedBalance": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["creditorId", "borrowerName", "creditorName", "currentBalance"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "An entry in a ledger",
+      "type": "object",
+      "properties": {
+        "ledgerId": { "type": "string" },
+        "type": { "type": "string", "enum": ["loan", "payment", "interest", "allocation"] },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "allocation": { 
+          "type": "object",
+          "properties": {
+            "principal": { "type": "number" },
+            "interest": { "type": "number" }
+          }
+        },
+        "paymentMethod": { "type": "string", "enum": ["cash", "transfer"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending_allocation", "allocated"] }
+      },
+      "required": ["ledgerId", "type", "amount", "createdBy"]
+    },
+    "LoanRequest": {
+      "title": "Loan Request",
+      "description": "A request for dynamic credit",
+      "type": "object",
+      "properties": {
+        "borrowerId": { "type": "string" },
+        "borrowerName": { "type": "string" },
+        "borrowerEmail": { "type": "string" },
+        "creditorId": { "type": "string" },
+        "creditorEmail": { "type": "string" },
+        "creditorName": { "type": "string" },
+        "amount": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "totalRepayAmount": { "type": "number" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["borrowerId", "creditorId", "amount", "status"]
+    },
+    "Invitation": {
+      "title": "Invitation",
+      "description": "An invitation to join the platform",
+      "type": "object",
+      "properties": {
+        "creditorId": { "type": "string" },
+        "borrowerEmail": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["creditorId", "borrowerEmail", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A system notification for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "success", "warning"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "read"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "UserProfile",
+      "description": "User profile data"
+    },
+    "ledgers": {
+      "schema": "Ledger",
+      "description": "Ledger data"
+    },
+    "ledgers/{ledgerId}/transactions": {
+      "schema": "Transaction",
+      "description": "Transactions within a ledger"
+    },
+    "requests": {
+      "schema": "LoanRequest",
+      "description": "Loan requests"
+    },
+    "invitations": {
+      "schema": "Invitation",
+      "description": "Invitations sent by creditors"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "User notifications"
+    }
+  }
+}

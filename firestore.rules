@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function emailMatches(dbEmail) {
+      return isSignedIn() && 
+             request.auth.token.keys().contains('email') && 
+             dbEmail is string && 
+             dbEmail.lower() == request.auth.token.email.lower();
+    }
+
+    // --- Validation Blueprints ---
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string && data.uid.size() <= 128 &&
+             data.email is string && data.email.size() <= 256 &&
+             data.role in ['borrower', 'creditor'] &&
+             data.uid == request.auth.uid &&
+             (data.role != 'creditor' || 
+              (request.auth.token.keys().contains('email') && 
+               (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || 
+                request.auth.token.email.lower() == 'taswellsolomons@gmail.com')));
+    }
+
+    function isValidLedger(data) {
+      return data.keys().hasAll(['creditorId', 'borrowerName', 'creditorName', 'currentBalance']) &&
+             data.creditorId is string && data.creditorId.size() <= 128 &&
+             data.borrowerName is string && data.borrowerName.size() <= 200 &&
+             data.creditorName is string && data.creditorName.size() <= 200 &&
+             data.currentBalance is number &&
+             (data.borrowerId == null || (data.borrowerId is string && data.borrowerId.size() <= 128));
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['ledgerId', 'type', 'amount', 'createdBy']) &&
+             data.ledgerId is string && data.ledgerId.size() <= 128 &&
+             data.type in ['loan', 'payment', 'interest', 'allocation'] &&
+             data.amount is number &&
+             data.createdBy == request.auth.uid &&
+             (!data.keys().contains('createdAt') || data.createdAt == request.time);
+    }
+
+    function isValidLoanRequest(data) {
+      return data.keys().hasAll(['borrowerId', 'creditorId', 'amount', 'status']) &&
+             data.borrowerId is string && data.borrowerId.size() <= 128 &&
+             data.creditorId is string && data.creditorId.size() <= 128 &&
+             data.amount is number &&
+             data.status in ['pending', 'approved', 'rejected'] &&
+             (!data.keys().contains('interestRate') || (data.interestRate >= 0 && data.interestRate <= 50)) &&
+             (!data.keys().contains('createdAt') || data.createdAt == request.time);
+    }
+
+    function isValidLoanRequestUpdate(data) {
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      let hasValidInterest = !data.keys().contains('interestRate') || (data.interestRate >= 0 && data.interestRate <= 50);
+      // Allow status update + updatedAt, interestRate, dateRequired; or allow full update if compliant with isValidLoanRequest
+      return (changed.hasAll(['status']) && changed.hasOnly(['status', 'updatedAt', 'interestRate', 'dateRequired']) && (data.status in ['approved', 'rejected']) && hasValidInterest) || isValidLoanRequest(data);
+    }
+
+    // --- Rules ---
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming());
+      allow update: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming()) && 
+                    incoming().role == existing().role;
+    }
+
+    match /ledgers/{ledgerId} {
+      allow get: if isValidId(ledgerId) && isSignedIn() && (
+        isOwner(existing().creditorId) || 
+        (existing().keys().contains('borrowerId') && isOwner(existing().borrowerId)) || 
+        (existing().keys().contains('borrowerEmail') && emailMatches(existing().borrowerEmail))
+      );
+      allow list: if isSignedIn() && (
+        resource.data.creditorId == request.auth.uid || 
+        (resource.data.keys().contains('borrowerId') && resource.data.borrowerId == request.auth.uid) || 
+        (resource.data.keys().contains('borrowerEmail') && (resource.data.borrowerEmail == request.auth.token.email || resource.data.borrowerEmail.lower() == request.auth.token.email.lower()))
+      );
+      allow create: if isValidId(ledgerId) && isSignedIn() && isOwner(incoming().creditorId) && isValidLedger(incoming());
+      allow update: if isValidId(ledgerId) && isSignedIn() && (
+        isOwner(existing().creditorId) || 
+        (existing().keys().contains('borrowerId') && isOwner(existing().borrowerId) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId', 'borrowerEmail', 'borrowerName'])) || 
+        (existing().keys().contains('borrowerEmail') && emailMatches(existing().borrowerEmail) && incoming().diff(existing()).affectedKeys().hasOnly(['borrowerId']))
+      );
+      allow delete: if isValidId(ledgerId) && isSignedIn() && isOwner(existing().creditorId);
+
+      match /transactions/{transactionId} {
+        // Master Gate: Check parent ledger
+        function canReadLedger() {
+          let ledger = get(/databases/$(database)/documents/ledgers/$(ledgerId)).data;
+          return isOwner(ledger.creditorId) || 
+                 (ledger.keys().contains('borrowerId') && isOwner(ledger.borrowerId)) || 
+                 (ledger.keys().contains('borrowerEmail') && emailMatches(ledger.borrowerEmail));
+        }
+        function isCreditorOfLedger() {
+          return isOwner(get(/databases/$(database)/documents/ledgers/$(ledgerId)).data.creditorId);
+        }
+        function isBorrowerOfLedger() {
+          let ledger = get(/databases/$(database)/documents/ledgers/$(ledgerId)).data;
+          return (ledger.keys().contains('borrowerId') && isOwner(ledger.borrowerId)) || 
+                 (ledger.keys().contains('borrowerEmail') && emailMatches(ledger.borrowerEmail));
+        }
+
+        allow get: if isValidId(transactionId) && isSignedIn() && canReadLedger();
+        allow list: if isSignedIn() && canReadLedger();
+        allow create: if isValidId(transactionId) && isSignedIn() && (isCreditorOfLedger() || (isBorrowerOfLedger() && incoming().type == 'payment')) && isValidTransaction(incoming());
+        allow update, delete: if isValidId(transactionId) && isSignedIn() && isCreditorOfLedger();
+      }
+    }
+
+    match /requests/{requestId} {
+      allow read: if isValidId(requestId) && isSignedIn() && (isOwner(existing().borrowerId) || isOwner(existing().creditorId));
+      allow list: if isSignedIn() && (resource.data.borrowerId == request.auth.uid || resource.data.creditorId == request.auth.uid);
+      allow create: if isValidId(requestId) && isSignedIn() && isOwner(incoming().borrowerId);
+      allow update: if isValidId(requestId) && isSignedIn() && (isOwner(existing().borrowerId) || isOwner(existing().creditorId)) && isValidLoanRequestUpdate(incoming());
+      allow delete: if isValidId(requestId) && isSignedIn() && isOwner(existing().borrowerId);
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isValidId(notificationId) && isSignedIn(); 
+      allow update: if isValidId(notificationId) && isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['read', 'updatedAt']);
+      allow delete: if isValidId(notificationId) && isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /invitations/{invitationId} {
+      allow get: if isValidId(invitationId) && isSignedIn();
+      allow create: if isValidId(invitationId) && isSignedIn() && isOwner(incoming().creditorId) && 
+                    (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || request.auth.token.email.lower() == 'taswellsolomons@gmail.com');
+      allow update: if isValidId(invitationId) && isSignedIn();
+      allow delete: if isValidId(invitationId) && isSignedIn() && isOwner(existing().creditorId);
+    }
+
+    match /email_logs/{logId} {
+      allow read: if isSignedIn() && resource.data.senderUid == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.senderUid == request.auth.uid;
+    }
+  }
+}

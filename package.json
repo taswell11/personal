@@ -1,0 +1,60 @@
+{
+  "name": "creditsync-2",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taswell11/creditsync.git"
+  },
+  "bugs": {
+    "url": "https://github.com/taswell11/creditsync/issues"
+  },
+  "homepage": "https://github.com/taswell11/creditsync#readme",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
+    "start": "node dist/server.cjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "d3": "^7.9.0",
+    "date-fns": "^3.6.0",
+    "esbuild": "^0.28.0",
+    "express": "^5.2.1",
+    "firebase": "^10.12.2",
+    "firebase-admin": "^13.10.0",
+    "googleapis": "^171.4.0",
+    "lucide-react": "^0.395.0",
+    "motion": "^11.2.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "tailwind-merge": "^2.3.0",
+    "tsx": "^4.22.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@firebase/eslint-plugin-security-rules": "^0.0.2",
+    "@types/cors": "^2.8.19",
+    "@types/d3": "^7.4.3",
+    "@types/express": "^5.0.6",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.2.2",
+    "typescript-eslint": "^8.59.3",
+    "vite": "^5.3.1"
+  }
+}

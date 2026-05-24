@@ -1,0 +1,6 @@
+{
+  "name": "CreditSync 2.0",
+  "description": "Enterprise-grade ledger system with role-based access, real-time transaction tracking, and integrated Gmail notifications via OAuth.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

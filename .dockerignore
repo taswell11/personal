@@ -1,0 +1,16 @@
+node_modules
+dist
+.git
+.github
+README.md
+IMPROVEMENTS.md
+QUICK_REFERENCE.md
+SUMMARY.md
+MANIFEST.md
+INTEGRATION_GUIDE.md
+eslint.config.js
+postcss.config.js
+tailwind.config.js
+tsconfig.json
+tsconfig.node.json
+vite.config.ts
