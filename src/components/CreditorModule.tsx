@@ -1153,7 +1153,7 @@ export const CreditorModule: React.FC<CreditorModuleProps> = ({
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Retrospective Credit Date</label>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Retrospective Transaction Date</label>
                           <input 
                             type="date"
                             value={issueData.dateIssued}

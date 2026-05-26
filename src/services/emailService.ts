@@ -98,7 +98,7 @@ export const emailService = {
             <p style="margin: 0; font-size: 28px; font-weight: 900; color: #4f46e5;">R ${total.toLocaleString()}</p>
           </div>
         </div>
-        <p>You can view your account details by <a href="https://ai.studio/apps/eca3ee5c-ef77-4b62-a04f-6520c5036791?fullscreenApplet=true">logging into CreditSync</a>.</p>
+        <p>You can view your account details by <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">logging into CreditSync</a>.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
         <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
       </div>
@@ -117,6 +117,7 @@ export const emailService = {
           <p style="margin: 0 0 10px 0; font-size: 28px; font-weight: 900; color: #0f172a;">R ${amount.toLocaleString()}</p>
         </div>
         <p>Please ensure your payment is made on time to keep your account in good standing.</p>
+        <p>You can view your account details by <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">logging into CreditSync</a>.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
         <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
       </div>
@@ -133,7 +134,7 @@ export const emailService = {
           <p style="margin: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: #059669;">Amount Paid</p>
           <p style="margin: 0; font-size: 28px; font-weight: 900; color: #047857;">R ${amount.toLocaleString()}</p>
         </div>
-        <p>You can view your updated portfolio and transaction history by logging into your dashboard.</p>
+        <p>You can view your updated portfolio and transaction history by <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">logging into CreditSync</a>.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
         <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
       </div>
@@ -147,7 +148,7 @@ export const emailService = {
         <h1 style="color: #4f46e5;">New Loan Request</h1>
         <p>Hello,</p>
         <p><strong>${borrowerName}</strong> has submitted a new loan request for <strong>R ${amount.toLocaleString()}</strong>.</p>
-        <p>Please log in to your dashboard to review and approve this request.</p>
+        <p>Please <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">log in to your dashboard</a> to review and approve this request.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
         <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
       </div>
@@ -175,6 +176,7 @@ export const emailService = {
         <p>Hello,</p>
         <p>Your loan request for <strong>R ${amount.toLocaleString()}</strong> has been declined by <strong>${creditorName}</strong>.</p>
         <p>Please contact your creditor if you have any questions.</p>
+        <p>You can view your account details by <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">logging into CreditSync</a>.</p>
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
         <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
       </div>

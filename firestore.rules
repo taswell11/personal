@@ -43,11 +43,7 @@ service cloud.firestore {
              data.uid is string && data.uid.size() <= 128 &&
              data.email is string && data.email.size() <= 256 &&
              data.role in ['borrower', 'creditor'] &&
-             data.uid == request.auth.uid &&
-             (data.role != 'creditor' || 
-              ('email' in request.auth.token && 
-               (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || 
-                request.auth.token.email.lower() == 'taswellsolomons@gmail.com')));
+             data.uid == request.auth.uid;
     }
 
     function isValidLedger(data) {
@@ -91,12 +87,7 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming());
-      allow update: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming()) && 
-                    (incoming().role == existing().role || 
-                     (existing().role == 'borrower' && incoming().role == 'creditor' && 
-                      'email' in request.auth.token && 
-                      (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || 
-                       request.auth.token.email.lower() == 'taswellsolomons@gmail.com')));
+      allow update: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming());
     }
 
     match /ledgers/{ledgerId} {
@@ -166,7 +157,7 @@ service cloud.firestore {
     match /invitations/{invitationId} {
       allow get: if isValidId(invitationId) && isSignedIn();
       allow create: if isValidId(invitationId) && isSignedIn() && isOwner(incoming().creditorId) && 
-                    (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || request.auth.token.email.lower() == 'taswellsolomons@gmail.com');
+                    (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'creditor');
       allow update: if isValidId(invitationId) && isSignedIn();
       allow delete: if isValidId(invitationId) && isSignedIn() && isOwner(existing().creditorId);
     }

@@ -880,21 +880,37 @@ export const firebaseService = {
 
   async signInWithGoogle() {
     try {
-      const { loginWithGoogle } = await import('../lib/firebase');
+      const { loginWithGoogle, logout } = await import('../lib/firebase');
       const result = await loginWithGoogle();
+      const email = result.user.email?.toLowerCase();
+      if (email && (email === 'taswell@ecomplete.co.za' || email === 'tazzytest1@gmail.com')) {
+        await logout();
+        throw new Error('This account is restricted from signing in.');
+      }
       return result.user;
-    } catch (e) {
+    } catch (e: any) {
       console.error('Google Sign In Error:', e);
+      if (e.message === 'This account is restricted from signing in.') {
+        throw e;
+      }
       return null;
     }
   },
 
   async signInWithEmail(email: string, password: string) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'taswell@ecomplete.co.za' || cleanEmail === 'tazzytest1@gmail.com') {
+      throw new Error('This account is restricted from signing in.');
+    }
     const cred = await signInWithEmailAndPassword(auth, email, password);
     return cred.user;
   },
 
   async signUpWithEmail(email: string, password: string, displayName: string, role: 'borrower' | 'creditor') {
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === 'taswell@ecomplete.co.za' || cleanEmail === 'tazzytest1@gmail.com') {
+      throw new Error('Registration is restricted for this email address.');
+    }
     const cred = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(cred.user, { displayName });
     

@@ -29,12 +29,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const isCreditor = email.toLowerCase() === 'tazzytest1@gmail.com' || email.toLowerCase() === 'taswellsolomons@gmail.com';
-
   const handleGoogleAuth = async () => {
     setLoading(true);
     setError('');
     try {
+      localStorage.setItem('preferredRole', role);
       const user = await firebaseService.signInWithGoogle();
       if (user) onLogin(user);
     } catch (err: any) {
@@ -59,7 +58,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
         if (password.length < 6) {
           throw new Error('Password must be at least 6 characters.');
         }
-        const assignedRole = isCreditor ? 'creditor' : role;
+        const assignedRole = role;
         const user = await firebaseService.signUpWithEmail(email, password, displayName, assignedRole);
         if (user) onLogin(user);
       }
@@ -190,7 +189,43 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 </div>
               )}
 
-              {/* 1. Google Authentication */}
+              {/* 1. Preferred Role / Account Type Selection */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center pl-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">Preferred Role / Account Type</label>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRole('borrower')}
+                    className={cn(
+                      "p-3 rounded-xl border text-center transition-all flex items-center justify-center gap-2",
+                      role === 'borrower' 
+                        ? "bg-indigo-500/20 border-indigo-500 text-white font-black" 
+                        : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                    )}
+                  >
+                    <User size={14} className={role === 'borrower' ? 'text-indigo-400' : ''} />
+                    <span className="text-[10px] uppercase tracking-wider">Borrower</span>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setRole('creditor')}
+                    className={cn(
+                      "p-3 rounded-xl border text-center transition-all flex items-center justify-center gap-2",
+                      role === 'creditor' 
+                        ? "bg-emerald-500/20 border-emerald-500 text-white font-black" 
+                        : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
+                    )}
+                  >
+                    <Shield size={14} className={role === 'creditor' ? 'text-emerald-400' : ''} />
+                    <span className="text-[10px] uppercase tracking-wider">Creditor</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Google Authentication */}
               <button
                 onClick={handleGoogleAuth}
                 disabled={loading}
@@ -205,7 +240,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 <div className="h-px bg-white/10 flex-1"></div>
               </div>
 
-              {/* 2. Traditional Email/Password Form */}
+              {/* 3. Traditional Email/Password Form */}
               <form onSubmit={handleEmailAndPasswordAuth} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Email Address</label>
@@ -254,52 +289,6 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     />
                   </div>
                 </div>
-
-                {/* Role selection for signup if not automatically flagged as Creditor */}
-                {authMethod === 'signup' && !isCreditor && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center pl-1">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Register as</label>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setRole('borrower')}
-                        className={cn(
-                          "p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1",
-                          role === 'borrower' 
-                            ? "bg-indigo-500/20 border-indigo-500 text-white font-black" 
-                            : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
-                        )}
-                      >
-                        <User size={16} className={role === 'borrower' ? 'text-indigo-400' : ''} />
-                        <span className="text-[10px] uppercase tracking-wider">Borrower</span>
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setRole('creditor')}
-                        className={cn(
-                          "p-3 rounded-2xl border text-center transition-all flex flex-col items-center justify-center gap-1",
-                          role === 'creditor' 
-                            ? "bg-emerald-500/20 border-emerald-500 text-white font-black" 
-                            : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
-                        )}
-                      >
-                        <Shield size={16} className={role === 'creditor' ? 'text-emerald-400' : ''} />
-                        <span className="text-[10px] uppercase tracking-wider">Creditor</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Display role badge for creditor-restricted emails */}
-                {authMethod === 'signup' && isCreditor && (
-                  <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-center">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 block mb-0.5">🚀 Restricted Access Email</span>
-                    <span className="text-xs font-semibold text-slate-300">You will automatically register as System Admin / Creditor</span>
-                  </div>
-                )}
 
                 <button
                   type="submit"

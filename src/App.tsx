@@ -78,38 +78,36 @@ export default function App() {
   useEffect(() => {
     return onAuthStateChanged(auth, async (u: User | null) => {
       try {
-        setUser(u);
         if (u) {
+          const email = u.email?.toLowerCase();
+          if (email && (email === 'taswell@ecomplete.co.za' || email === 'tazzytest1@gmail.com')) {
+            await firebaseLogout();
+            setUser(null);
+            setProfile(null);
+            setLoading(false);
+            return;
+          }
+          setUser(u);
           let p = await firebaseService.getUserProfile(u.uid);
           
-          // Auto-identify Admin as Creditor
-          const isCreditorEmail = u.email?.toLowerCase() === 'tazzytest1@gmail.com' || u.email?.toLowerCase() === 'taswellsolomons@gmail.com';
-          if (isCreditorEmail) {
-            if (!p || p.role !== 'creditor') {
-              await firebaseService.ensureUserProfile(u.uid, { 
-                role: 'creditor',
-                email: u.email,
-                displayName: u.displayName || 'System Admin'
-              });
-              p = await firebaseService.getUserProfile(u.uid);
-            }
-          } else {
-            // Auto-identify others as Borrowers if they don't have a profile yet
-            if (!p) {
-              await firebaseService.ensureUserProfile(u.uid, { 
-                role: 'borrower',
-                email: u.email || '',
-                displayName: u.displayName || 'User'
-              });
-              p = await firebaseService.getUserProfile(u.uid);
-            }
-            if (u.email) {
-              await firebaseService.linkBorrowerLedgers(u.uid, u.email);
-            }
+          // Create profile if it does not exist, using the selected role
+          if (!p) {
+            const preferredRole = (localStorage.getItem('preferredRole') as 'borrower' | 'creditor') || 'borrower';
+            await firebaseService.ensureUserProfile(u.uid, { 
+              role: preferredRole,
+              email: u.email || '',
+              displayName: u.displayName || 'User'
+            });
+            p = await firebaseService.getUserProfile(u.uid);
+            localStorage.removeItem('preferredRole');
+          }
+          if (u.email) {
+            await firebaseService.linkBorrowerLedgers(u.uid, u.email);
           }
           
           setProfile(p);
         } else {
+          setUser(null);
           setProfile(null);
         }
       } catch (err) {
@@ -187,7 +185,7 @@ export default function App() {
     try {
       const inviteId = await firebaseService.createInvitation(profile.uid, inviteEmail);
       if (inviteId) {
-        const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${inviteId}`;
+        const inviteUrl = `https://creditsync-863590140061.us-west1.run.app/?invite=${inviteId}`;
         await navigator.clipboard.writeText(inviteUrl);
         
         // Send real invitation email

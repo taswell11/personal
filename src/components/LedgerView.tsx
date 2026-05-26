@@ -142,7 +142,7 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ ledger: initialLedger, o
               <h1 style="color: #4f46e5;">Payment Allocated</h1>
               <p>Hello ${ledger.borrowerName},</p>
               <p>Your payment of <strong>R ${Number(amount).toLocaleString()}</strong> has been successfully allocated to outstanding credit balance by <strong>${ledger.creditorName}</strong>.</p>
-              <p>You can view your updated portfolio and transaction history by logging into your dashboard.</p>
+              <p>You can view your updated portfolio and transaction history by <a href="https://creditsync-863590140061.us-west1.run.app" style="color: #4f46e5; font-weight: bold; text-decoration: underline;">logging into CreditSync</a>.</p>
               <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
               <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
             </div>
