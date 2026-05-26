@@ -73,7 +73,9 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), "dist");
+    // In production, server.cjs is bundled inside dist/ so __dirname is the absolute path to the dist/ directory.
+    // Using __dirname is extremely robust against workspace/working directory variations in cloud environments.
+    const distPath = typeof __dirname !== "undefined" ? __dirname : path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*all", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));

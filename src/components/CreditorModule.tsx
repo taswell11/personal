@@ -594,15 +594,15 @@ export const CreditorModule: React.FC<CreditorModuleProps> = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           {/* Left Column: Doughnut Chart with Center Text */}
-          <div className="relative h-80 md:h-[350px] flex items-center justify-center">
+          <div className="relative h-[384px] md:h-[420px] flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 {/* Inner Ring: Issued vs Interest */}
                 <Pie
                   id="portfolio-inner-chart"
                   data={innerChartData}
-                  innerRadius={58}
-                  outerRadius={82}
+                  innerRadius={70}
+                  outerRadius={98}
                   paddingAngle={4}
                   dataKey="value"
                   onMouseEnter={(_, index) => {
@@ -634,8 +634,8 @@ export const CreditorModule: React.FC<CreditorModuleProps> = ({
                 <Pie
                   id="portfolio-outer-chart"
                   data={outerChartData}
-                  innerRadius={94}
-                  outerRadius={114}
+                  innerRadius={113}
+                  outerRadius={137}
                   paddingAngle={4}
                   dataKey="value"
                   onMouseEnter={(_, index) => {
@@ -774,7 +774,7 @@ export const CreditorModule: React.FC<CreditorModuleProps> = ({
                  <th className="py-4 px-6">Transaction Type</th>
                  <th className="py-4 px-6">Borrower</th>
                  <th className="py-4 px-6">Reference</th>
-                 <th className="py-4 px-6">Credit Date</th>
+                 <th className="py-4 px-6">Transaction Date</th>
                  <th className="py-4 px-6">Timestamp</th>
                  <th className="py-4 px-6">Repayment Date</th>
                  <th className="py-4 px-6">Value</th>
@@ -807,7 +807,7 @@ export const CreditorModule: React.FC<CreditorModuleProps> = ({
                          {tx.createdAt ? formatDateTime(tx.createdAt) : 'Pending...'}
                        </td>
                        <td className="py-4 px-6 text-slate-400 text-xs font-medium">
-                         {tx.dueDate || '-'}
+                         {tx.dueDate || (tx.type === 'payment' ? (tx.retrospectiveDate || (tx.createdAt ? formatDateTime(tx.createdAt) : '-')) : '-')}
                        </td>
                        <td className="py-4 px-6 font-black">
                          <div className={cn(isCredit ? "text-slate-100 font-mono tracking-tight" : "text-emerald-400 font-mono tracking-tight")}>

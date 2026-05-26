@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
 import * as z from 'zod';
 import { firebaseService, UserProfile, Ledger, Transaction } from '../services/firebaseService';
+import { emailService } from '../services/emailService';
 
 const transactionSchema = z.object({
   amount: z.number().min(0.01, 'Amount must be greater than zero'),
@@ -133,6 +134,26 @@ export const LedgerView: React.FC<LedgerViewProps> = ({ ledger: initialLedger, o
     try {
       if (showAdd === 'allocation') {
         await firebaseService.allocatePayment(ledger.id, Number(amount), allocation, allocatingTxId || selectedCreditId || undefined);
+        
+        if (ledger.borrowerEmail) {
+          const emailSubject = `Payment Allocated: R${Number(amount).toLocaleString()}`;
+          const emailHtml = `
+            <div style="font-family: sans-serif; padding: 20px; color: #334155;">
+              <h1 style="color: #4f46e5;">Payment Allocated</h1>
+              <p>Hello ${ledger.borrowerName},</p>
+              <p>Your payment of <strong>R ${Number(amount).toLocaleString()}</strong> has been successfully allocated to outstanding credit balance by <strong>${ledger.creditorName}</strong>.</p>
+              <p>You can view your updated portfolio and transaction history by logging into your dashboard.</p>
+              <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
+              <p style="font-size: 12px; color: #94a3b8;">This is an automated message from CreditSync.</p>
+            </div>
+          `;
+          try {
+            await emailService.sendEmail(ledger.borrowerEmail, emailSubject, emailHtml);
+          } catch (err) {
+            console.error('Failed to send payment allocation email:', err);
+          }
+        }
+
         setAllocatingTxId(null);
         setSelectedCreditId('');
       } else if (editingTransaction) {

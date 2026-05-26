@@ -92,7 +92,11 @@ service cloud.firestore {
       allow list: if isSignedIn();
       allow create: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming());
       allow update: if isValidId(userId) && isOwner(userId) && isValidUserProfile(incoming()) && 
-                    incoming().role == existing().role;
+                    (incoming().role == existing().role || 
+                     (existing().role == 'borrower' && incoming().role == 'creditor' && 
+                      'email' in request.auth.token && 
+                      (request.auth.token.email.lower() == 'tazzytest1@gmail.com' || 
+                       request.auth.token.email.lower() == 'taswellsolomons@gmail.com')));
     }
 
     match /ledgers/{ledgerId} {
@@ -104,7 +108,7 @@ service cloud.firestore {
       allow list: if isSignedIn() && (
         resource.data.creditorId == request.auth.uid || 
         ('borrowerId' in resource.data && resource.data.borrowerId == request.auth.uid) || 
-        ('borrowerEmail' in resource.data && (resource.data.borrowerEmail == request.auth.token.email || resource.data.borrowerEmail.lower() == request.auth.token.email.lower()))
+        ('borrowerEmail' in resource.data && (resource.data.borrowerEmail == request.auth.token.email || resource.data.borrowerEmail == request.auth.token.email.lower()))
       );
       allow create: if isValidId(ledgerId) && isSignedIn() && isOwner(incoming().creditorId) && isValidLedger(incoming());
       allow update: if isValidId(ledgerId) && isSignedIn() && (

@@ -799,15 +799,16 @@ export const firebaseService = {
           });
         }
         
-        if (data.borrowerEmail) {
-          transaction.set(doc(collection(db, 'mail')), {
-            to: data.borrowerEmail,
-            message: {
-              subject: 'Payment Allocated',
-              text: `Your payment of R${amount} has been successfully allocated to credit transaction ${creditTransactionId}.`,
-              html: `<p>Your payment of <strong>R${amount}</strong> has been successfully allocated to credit transaction <strong>${creditTransactionId}</strong>.</p>`
-            }
-          });
+        if (data.borrowerId) {
+          const notifRef = doc(collection(db, 'notifications'));
+          transaction.set(notifRef, cleanData({
+            userId: data.borrowerId,
+            title: 'Payment Allocated',
+            message: `Your payment of R${amount.toLocaleString()} has been successfully allocated to a credit transaction.`,
+            type: 'success',
+            read: false,
+            createdAt: serverTimestamp(),
+          }));
         }
       });
     } catch (e) {

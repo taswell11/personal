@@ -346,7 +346,7 @@ export const BorrowerModule: React.FC<BorrowerModuleProps> = ({
                             <td className="py-4 px-6 font-black text-white">{tx._ledgerName}</td>
                             <td className="py-4 px-6 text-slate-400 font-medium">{tx.description || '-'}</td>
                             <td className="py-4 px-6 text-slate-400 text-xs font-mono tracking-tight">{tx.createdAt ? localizedFormatDate(tx.createdAt) : 'Pending...'}</td>
-                            <td className="py-4 px-6 text-slate-400 text-xs font-mono tracking-tight">{tx.dueDate || '-'}</td>
+                            <td className="py-4 px-6 text-slate-400 text-xs font-mono tracking-tight">{tx.dueDate || (tx.type === 'payment' ? (tx.retrospectiveDate || (tx.createdAt ? localizedFormatDate(tx.createdAt) : '-')) : '-')}</td>
                             <td className="py-4 px-6 font-black font-mono tracking-tight">
                               <div className={cn(isCredit ? "text-slate-100" : "text-emerald-400")}>
                                 {isCredit ? '+' : '-'}R{tx.amount.toLocaleString()}
